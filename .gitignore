@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data
+data/*.db
+data/*.sqlite
+data/chroma/
+data/runs/
+!data/.gitkeep
+
+# IDE and operating-system files
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+desktop.ini
