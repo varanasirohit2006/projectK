@@ -75,6 +75,7 @@ class ResearchQuery(PolyModel):
     max_sources: int = Field(default=10, ge=1, le=100)
     max_cost_usd: float = Field(default=1.0, ge=0)
     max_duration_seconds: int = Field(default=300, ge=1)
+    max_retries: int = Field(default=3, ge=0, le=10)
 
     @field_validator("question")
     @classmethod
@@ -208,4 +209,12 @@ class RunRecord(PolyModel):
     finished_at: datetime | None = None
     total_cost_usd: float = Field(default=0.0, ge=0)
     total_duration_seconds: float = Field(default=0.0, ge=0)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class UserFeedback(PolyModel):
+    feedback_id: str = Field(default_factory=lambda: new_id("feedback"))
+    run_id: str
+    rating: str
+    comment: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

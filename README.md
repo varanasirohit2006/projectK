@@ -6,18 +6,22 @@ tasks, stores claims with provenance, and produces a citation-backed report.
 
 ## Current implementation
 
-The first implementation slice includes:
-
-- typed research, plan, task, source, evidence, review, approval, and run models;
-- a SQLite evidence store with claim-to-evidence links;
-- durable run events and workflow checkpoints;
-- dependency-free agent interfaces suitable for MCP or hosted model adapters;
-- an offline demo provider so the complete flow can be tested without API keys.
+- Supervisor-generated DAG with plan preview and approval;
+- Research, RAG, data analyst, risk/critic, reporter, and reviewer agents;
+- parallel independent tasks with retries and resumable SQLite checkpoints;
+- SQLite evidence store with source provenance and claim-to-evidence links;
+- source deduplication, quality/freshness scores, contradictions, and uncertainty;
+- human approval for high-risk plans;
+- MCP-shaped tool discovery and web-search adapter;
+- read-only SQL, CSV-only analysis, filesystem policy, and prompt-injection flags;
+- Recall@3, faithfulness, citation coverage, and answer-correctness metrics;
+- offline demo provider so the complete flow runs without API keys;
+- optional LangGraph, ChromaDB, MCP SDK, Streamlit, and ReportLab adapters.
 
 Optional integrations are kept behind extras so the core remains easy to run:
 
 ```text
-pip install -e ".[dev,workflow,ui,mcp]"
+pip install -e ".[dev,workflow,ui,mcp,vector,pdf]"
 ```
 
 ## Development
@@ -30,5 +34,34 @@ pytest
 ruff check .
 ```
 
+## CLI demo
+
+Create a plan without executing it:
+
+```text
+python -m polyanalyst plan "Analyze supply chain resilience"
+```
+
+Approve and execute the offline workflow:
+
+```text
+python -m polyanalyst run "Analyze supply chain resilience" --approve-plan --export data/report.md
+```
+
+For the interactive interface, install the UI extra and run:
+
+```text
+streamlit run src/polyanalyst/ui/streamlit_app.py
+```
+
+## Architecture
+
+Agents communicate through typed workflow state and the evidence store rather
+than passing unstructured messages. External capabilities implement the
+`SearchProvider` or MCP tool contract. Retrieved web pages and documents are
+treated as untrusted evidence, while data analysis is restricted to bounded
+CSV statistics or read-only SQL.
+
 Runtime data is written to `data/` and is intentionally ignored by Git. Copy
-`.env.example` to `.env` when configuring a real provider.
+`.env.example` to `.env` when configuring a real provider. API-specific model
+adapters can be added without changing the domain models or workflow.

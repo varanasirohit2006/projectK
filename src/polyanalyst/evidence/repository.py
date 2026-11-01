@@ -146,6 +146,13 @@ class SQLiteEvidenceStore:
             ).fetchall()
         return [EvidenceItem.model_validate(json.loads(row["payload"])) for row in rows]
 
+    def list_unique_evidence(self, run_id: str | None = None) -> list[EvidenceItem]:
+        """Return one strongest item per normalized claim."""
+
+        from polyanalyst.evidence.quality import deduplicate_evidence
+
+        return deduplicate_evidence(self.list_evidence(run_id))
+
     def get_claim(self, claim_id: str) -> ReportClaim | None:
         row = self._connection.execute(
             "SELECT payload FROM report_claims WHERE claim_id = ?", (claim_id,)

@@ -18,6 +18,7 @@ class Settings(BaseModel):
     max_sources: int = Field(default=10, ge=1, le=100)
     max_cost_usd: float = Field(default=1.0, ge=0)
     max_duration_seconds: int = Field(default=300, ge=1)
+    max_retries: int = Field(default=3, ge=0, le=10)
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -32,6 +33,7 @@ class Settings(BaseModel):
             "max_sources": "POLYANALYST_MAX_SOURCES",
             "max_cost_usd": "POLYANALYST_MAX_COST_USD",
             "max_duration_seconds": "POLYANALYST_MAX_DURATION_SECONDS",
+            "max_retries": "POLYANALYST_MAX_RETRIES",
         }
         for field_name, environment_name in mapping.items():
             if environment_name in os.environ:

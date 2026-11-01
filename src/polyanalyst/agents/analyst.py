@@ -10,13 +10,19 @@ from pathlib import Path
 from polyanalyst.agents.base import AgentOutput
 from polyanalyst.evidence.repository import SQLiteEvidenceStore
 from polyanalyst.models import EvidenceItem, Finding, ResearchQuery, Source, SourceType
+from polyanalyst.security.guardrails import DataPathPolicy
 
 
 class DataAnalystAgent:
     """Analyze CSV files without executing arbitrary user code."""
 
-    def __init__(self, max_bytes: int = 5_000_000) -> None:
+    def __init__(
+        self,
+        max_bytes: int = 5_000_000,
+        path_policy: DataPathPolicy | None = None,
+    ) -> None:
         self.max_bytes = max_bytes
+        self.path_policy = path_policy
 
     def run(
         self,
@@ -28,7 +34,7 @@ class DataAnalystAgent:
         evidence_ids: list[str] = []
         summaries: list[str] = []
         for raw_path in query.data_paths:
-            path = Path(raw_path)
+            path = self.path_policy.validate(raw_path) if self.path_policy else Path(raw_path)
             if path.suffix.lower() != ".csv":
                 raise ValueError(f"Unsupported data file: {path.name}; only CSV is allowed")
             if path.stat().st_size > self.max_bytes:

@@ -7,7 +7,7 @@ import sqlite3
 from pathlib import Path
 from threading import RLock
 
-from polyanalyst.models import ResearchQuery, RunEvent, RunRecord, RunStatus
+from polyanalyst.models import ResearchQuery, RunEvent, RunRecord, RunStatus, UserFeedback
 
 
 class RunRepository:
@@ -42,6 +42,13 @@ class RunRepository:
                     payload TEXT NOT NULL,
                     created_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS feedback (
+                    feedback_id TEXT PRIMARY KEY,
+                    run_id TEXT NOT NULL,
+                    payload TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_feedback_run ON feedback(run_id);
                 """
             )
 
@@ -114,6 +121,52 @@ class RunRepository:
             "SELECT payload FROM run_checkpoints WHERE run_id = ?", (run_id,)
         ).fetchone()
         return json.loads(row["payload"]) if row else None
+
+    def save_feedback(self, feedback: UserFeedback) -> UserFeedback:
+        with self._lock, self._connection:
+            self._connection.execute(
+                """
+                INSERT INTO feedback(feedback_id, run_id, payload, created_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    feedback.feedback_id,
+                    feedback.run_id,
+                    feedback.model_dump_json(),
+                    feedback.created_at.isoformat(),
+                ),
+            )
+        return feedback
+
+    def list_feedback(self, run_id: str | None = None) -> list[UserFeedback]:
+        if run_id:
+            rows = self._connection.execute(
+                "SELECT payload FROM feedback WHERE run_id = ? ORDER BY created_at", (run_id,)
+            ).fetchall()
+        else:
+            rows = self._connection.execute(
+                "SELECT payload FROM feedback ORDER BY created_at"
+            ).fetchall()
+        return [UserFeedback.model_validate(json.loads(row["payload"])) for row in rows]
+
+    def compare_runs(self, first_run_id: str, second_run_id: str) -> dict[str, object]:
+        """Return stable, presentation-ready differences between two runs."""
+
+        first = self.get_run(first_run_id)
+        second = self.get_run(second_run_id)
+        if first is None or second is None:
+            raise KeyError("Both run IDs must exist before comparison")
+        return {
+            "first_run_id": first.run_id,
+            "second_run_id": second.run_id,
+            "status": {"first": first.status.value, "second": second.status.value},
+            "cost_delta_usd": round(second.total_cost_usd - first.total_cost_usd, 6),
+            "duration_delta_seconds": round(
+                second.total_duration_seconds - first.total_duration_seconds, 6
+            ),
+            "query_changed": first.query != second.query,
+            "report_changed": first.report_markdown != second.report_markdown,
+        }
 
     def update_status(self, run_id: str, status: RunStatus, **updates: object) -> RunRecord:
         run = self.get_run(run_id)

@@ -38,7 +38,7 @@ class RiskCriticAgent:
         run_id: str,
         store: SQLiteEvidenceStore,
     ) -> AgentOutput:
-        evidence = store.list_evidence(run_id)
+        evidence = store.list_unique_evidence(run_id)
         contradictions = self.detect_contradictions(evidence)
         risk_items = [
             item

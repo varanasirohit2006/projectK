@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from polyanalyst.agents.base import AgentOutput, SearchProvider, SearchResult
 from polyanalyst.evidence.repository import SQLiteEvidenceStore
 from polyanalyst.models import EvidenceItem, Finding, ResearchQuery, Source, SourceType
+from polyanalyst.security.guardrails import inspect_untrusted_text
 
 
 class DemoSearchProvider:
@@ -60,6 +61,7 @@ class ResearchAgent:
         results = self.provider.search(query, query.max_sources)
         evidence_ids: list[str] = []
         for result in results:
+            guardrail = inspect_untrusted_text(result.content)
             content_hash = hashlib.sha256(result.content.encode("utf-8")).hexdigest()
             source = Source(
                 url=result.url,
@@ -82,7 +84,12 @@ class ResearchAgent:
                 freshness_score=source.freshness_score,
                 task_id=task_id,
                 agent_id="research",
-                metadata=result.metadata,
+                metadata={
+                    **result.metadata,
+                    "untrusted_content": True,
+                    "prompt_injection_flagged": guardrail.flagged,
+                    "prompt_injection_signals": guardrail.signals,
+                },
             )
             store.add_evidence(evidence)
             evidence_ids.append(evidence.evidence_id)

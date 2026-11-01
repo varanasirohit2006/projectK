@@ -1,6 +1,13 @@
 from polyanalyst.evidence.repository import SQLiteEvidenceStore
 from polyanalyst.graph.checkpoints import RunRepository
-from polyanalyst.models import EvidenceItem, ReportClaim, ResearchQuery, Source, SourceType
+from polyanalyst.models import (
+    EvidenceItem,
+    ReportClaim,
+    ResearchQuery,
+    Source,
+    SourceType,
+    UserFeedback,
+)
 
 
 def test_evidence_store_preserves_claim_links(tmp_path) -> None:
@@ -34,3 +41,17 @@ def test_run_repository_saves_events_and_checkpoints(tmp_path) -> None:
         repository.save_checkpoint(run.run_id, {"step": "plan", "task_count": 2})
         assert repository.load_checkpoint(run.run_id) == {"step": "plan", "task_count": 2}
         assert repository.get_run(run.run_id) == run
+
+
+def test_run_repository_stores_feedback_and_compares_runs(tmp_path) -> None:
+    path = tmp_path / "history.db"
+    with RunRepository(path) as repository:
+        first = repository.create_run(ResearchQuery(question="What changed?"))
+        second = repository.create_run(ResearchQuery(question="What changed this quarter?"))
+        repository.save_feedback(
+            UserFeedback(run_id=first.run_id, rating="useful", comment="Clear citations")
+        )
+
+        assert repository.list_feedback(first.run_id)[0].rating == "useful"
+        comparison = repository.compare_runs(first.run_id, second.run_id)
+        assert comparison["query_changed"] is True

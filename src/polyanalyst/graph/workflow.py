@@ -27,6 +27,7 @@ from polyanalyst.models import (
 )
 from polyanalyst.reporting.drafting import DraftReport, ReportGenerator
 from polyanalyst.reporting.reviewer import ReviewerAgent
+from polyanalyst.tools.budgets import BudgetExceeded
 
 
 class ResearchWorkflow:
@@ -122,6 +123,8 @@ class ResearchWorkflow:
         if state.plan is None or not state.plan.approved:
             return WorkflowResult(state=state)
         started_at = datetime.now(UTC)
+        if state.plan.estimated_cost_usd > state.query.max_cost_usd:
+            return self._fail(state, "Estimated plan cost exceeds the configured cost budget")
         self.run_repository.update_status(
             state.run_id,
             RunStatus.RUNNING,
@@ -131,7 +134,7 @@ class ResearchWorkflow:
         state.status = RunStatus.RUNNING
         self._emit(state.run_id, "run_started", "Approved research run started")
         try:
-            self._execute_tasks(state)
+            self._execute_tasks(state, started_at)
         except Exception as exc:
             return self._fail(state, str(exc))
 
@@ -155,7 +158,7 @@ class ResearchWorkflow:
             return self._fail(state, "Human approval was denied")
         return self._complete(state, started_at)
 
-    def _execute_tasks(self, state: WorkflowState) -> None:
+    def _execute_tasks(self, state: WorkflowState, started_at: datetime) -> None:
         assert state.plan is not None
         tasks_by_id = {task.task_id: task for task in state.plan.tasks}
         completed = set(state.completed_task_ids)
@@ -181,7 +184,8 @@ class ResearchWorkflow:
             outputs: dict[str, AgentOutput] = {}
             with ThreadPoolExecutor(max_workers=min(self.max_workers, len(ready))) as executor:
                 futures = {
-                    executor.submit(self._execute_task, state, task): task for task in ready
+                    executor.submit(self._execute_task_with_retry, state, task): task
+                    for task in ready
                 }
                 for future in as_completed(futures):
                     task = futures[future]
@@ -209,6 +213,7 @@ class ResearchWorkflow:
                     {"evidence_count": len(output.evidence_ids)},
                 )
                 self._checkpoint(state)
+                self._check_budget(state, started_at)
 
     def _execute_task(self, state: WorkflowState, task: ResearchTask) -> AgentOutput:
         if task.kind == TaskKind.RESEARCH:
@@ -225,7 +230,7 @@ class ResearchWorkflow:
             output = self.critic.run(state.query, state.run_id, self.evidence_store)
             return output
         if task.kind == TaskKind.REPORT:
-            evidence = self.evidence_store.list_evidence(state.run_id)
+            evidence = self.evidence_store.list_unique_evidence(state.run_id)
             draft = self.reporter.draft(
                 state.query,
                 evidence,
@@ -243,7 +248,7 @@ class ResearchWorkflow:
                 evidence_ids=[evidence.evidence_id for evidence in evidence],
             )
         if task.kind == TaskKind.REVIEW:
-            evidence = self.evidence_store.list_evidence(state.run_id)
+            evidence = self.evidence_store.list_unique_evidence(state.run_id)
             draft = DraftReport(
                 title=state.report_title or "Research report",
                 markdown=state.report_markdown or "",
@@ -262,6 +267,35 @@ class ResearchWorkflow:
                 evidence_ids=[evidence.evidence_id for evidence in evidence],
             )
         raise ValueError(f"Unsupported task kind: {task.kind}")
+
+    def _execute_task_with_retry(self, state: WorkflowState, task: ResearchTask) -> AgentOutput:
+        """Retry transient agent failures without exceeding the query budget."""
+
+        while True:
+            try:
+                return self._execute_task(state, task)
+            except Exception:
+                task.retry_count += 1
+                if task.retry_count > state.query.max_retries:
+                    raise
+                self._emit(
+                    state.run_id,
+                    "task_retry",
+                    f"Retrying {task.title} ({task.retry_count}/{state.query.max_retries})",
+                    task.task_id,
+                    {"retry_count": task.retry_count},
+                )
+
+    def _check_budget(self, state: WorkflowState, started_at: datetime) -> None:
+        """Stop a run as soon as a configured budget is crossed."""
+
+        if state.plan and state.plan.estimated_cost_usd > state.query.max_cost_usd:
+            raise BudgetExceeded("Configured cost budget was exceeded")
+        elapsed = (datetime.now(UTC) - started_at).total_seconds()
+        if elapsed > state.query.max_duration_seconds:
+            raise BudgetExceeded("Configured duration budget was exceeded")
+        if len(self.evidence_store.list_evidence(state.run_id)) > state.query.max_sources:
+            raise BudgetExceeded("Configured source budget was exceeded")
 
     def _complete(self, state: WorkflowState, started_at: datetime) -> WorkflowResult:
         state.status = RunStatus.COMPLETED

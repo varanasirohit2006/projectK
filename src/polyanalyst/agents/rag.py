@@ -8,6 +8,7 @@ from polyanalyst.agents.base import AgentOutput
 from polyanalyst.evidence.repository import SQLiteEvidenceStore
 from polyanalyst.ingestion.documents import InMemoryDocumentStore
 from polyanalyst.models import EvidenceItem, Finding, ResearchQuery, Source, SourceType
+from polyanalyst.security.guardrails import inspect_untrusted_text
 
 
 class RAGAgent:
@@ -30,6 +31,7 @@ class RAGAgent:
         )
         evidence_ids: list[str] = []
         for chunk, score in matches:
+            guardrail = inspect_untrusted_text(chunk.text)
             content_hash = hashlib.sha256(chunk.text.encode("utf-8")).hexdigest()
             source = Source(
                 document_id=chunk.document_id,
@@ -52,7 +54,13 @@ class RAGAgent:
                 freshness_score=source.freshness_score,
                 task_id=task_id,
                 agent_id="rag",
-                metadata={"collection_id": chunk.collection_id, **chunk.metadata},
+                metadata={
+                    "collection_id": chunk.collection_id,
+                    **chunk.metadata,
+                    "untrusted_content": True,
+                    "prompt_injection_flagged": guardrail.flagged,
+                    "prompt_injection_signals": guardrail.signals,
+                },
             )
             store.add_evidence(evidence)
             evidence_ids.append(evidence.evidence_id)
