@@ -16,6 +16,7 @@ from polyanalyst.evidence.repository import SQLiteEvidenceStore
 from polyanalyst.graph.checkpoints import RunRepository
 from polyanalyst.graph.state import WorkflowResult, WorkflowState
 from polyanalyst.ingestion.documents import InMemoryDocumentStore
+from polyanalyst.llm.base import LLMProvider
 from polyanalyst.models import (
     ApprovalRequest,
     ResearchQuery,
@@ -46,6 +47,7 @@ class ResearchWorkflow:
         critic: RiskCriticAgent | None = None,
         reporter: ReportGenerator | None = None,
         reviewer: ReviewerAgent | None = None,
+        llm: LLMProvider | None = None,
         max_workers: int = 3,
     ) -> None:
         self.evidence_store = evidence_store
@@ -56,7 +58,7 @@ class ResearchWorkflow:
         self.rag_agent = rag_agent or RAGAgent(self.document_store)
         self.data_analyst = data_analyst or DataAnalystAgent()
         self.critic = critic or RiskCriticAgent()
-        self.reporter = reporter or ReportGenerator()
+        self.reporter = reporter or ReportGenerator(llm=llm)
         self.reviewer = reviewer or ReviewerAgent()
         self.max_workers = max(1, max_workers)
 

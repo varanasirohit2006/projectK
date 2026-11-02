@@ -6,10 +6,12 @@ import argparse
 import json
 from pathlib import Path
 
+from polyanalyst.config import Settings
 from polyanalyst.evidence.repository import SQLiteEvidenceStore
 from polyanalyst.graph.checkpoints import RunRepository
 from polyanalyst.graph.workflow import ResearchWorkflow
 from polyanalyst.ingestion.documents import InMemoryDocumentStore
+from polyanalyst.llm.factory import build_llm_provider
 from polyanalyst.models import ResearchQuery, RiskLevel
 
 
@@ -30,8 +32,14 @@ def build_demo_workflow(
         ),
         collection_id="demo",
     )
+    settings = Settings.from_env()
     return (
-        ResearchWorkflow(evidence_store, run_repository, document_store=documents),
+        ResearchWorkflow(
+            evidence_store,
+            run_repository,
+            document_store=documents,
+            llm=build_llm_provider(settings),
+        ),
         evidence_store,
         run_repository,
     )

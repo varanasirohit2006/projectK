@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from polyanalyst.config import Settings
 from polyanalyst.evidence.repository import SQLiteEvidenceStore
 from polyanalyst.graph.checkpoints import RunRepository
 from polyanalyst.graph.workflow import ResearchWorkflow
 from polyanalyst.ingestion.documents import InMemoryDocumentStore
+from polyanalyst.llm.factory import build_llm_provider
 from polyanalyst.models import ResearchQuery, RiskLevel, RunStatus
 
 
@@ -20,7 +22,13 @@ def _workflow() -> ResearchWorkflow:
         runs = RunRepository(database)
         documents = InMemoryDocumentStore()
         st.session_state.workflow_resources = (evidence, runs)
-        st.session_state.workflow = ResearchWorkflow(evidence, runs, document_store=documents)
+        settings = Settings.from_env()
+        st.session_state.workflow = ResearchWorkflow(
+            evidence,
+            runs,
+            document_store=documents,
+            llm=build_llm_provider(settings),
+        )
     return st.session_state.workflow
 
 

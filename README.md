@@ -21,7 +21,7 @@ tasks, stores claims with provenance, and produces a citation-backed report.
 Optional integrations are kept behind extras so the core remains easy to run:
 
 ```text
-pip install -e ".[dev,workflow,ui,mcp,vector,pdf]"
+pip install -e ".[dev,workflow,ui,mcp,vector,pdf,gemini]"
 ```
 
 ## Development
@@ -65,3 +65,24 @@ CSV statistics or read-only SQL.
 Runtime data is written to `data/` and is intentionally ignored by Git. Copy
 `.env.example` to `.env` when configuring a real provider. API-specific model
 adapters can be added without changing the domain models or workflow.
+
+## Gemini provider
+
+The official `google-genai` SDK is integrated behind the provider contract.
+Keep the key in the environment and never commit it:
+
+PowerShell:
+
+```powershell
+$env:GEMINI_API_KEY = "your-key"
+$env:POLYANALYST_MODEL_PROVIDER = "gemini"
+$env:POLYANALYST_MODEL_NAME = "gemini-2.5-flash"
+```
+
+Alternatively, put the same variables in a local `.env` file. `.env` is
+ignored by Git and is loaded automatically at startup.
+
+Then run the normal CLI or Streamlit flow. Gemini generates the bounded report
+narrative from the collected evidence; deterministic citation linking and
+review remain active. If no provider is configured, the offline demo behavior
+continues to work.
