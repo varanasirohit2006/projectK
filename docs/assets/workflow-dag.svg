@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="620" viewBox="0 0 1400 620" role="img" aria-labelledby="title desc">
+  <title id="title">PolyAnalyst research workflow DAG</title>
+  <desc id="desc">Research, retrieval, and optional data analysis converge on critic, report, and review tasks.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#64748b"/></marker>
+    <filter id="shadow"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity=".18"/></filter>
+  </defs>
+  <rect width="1400" height="620" rx="24" fill="#f8fafc"/>
+  <text x="65" y="68" fill="#0f172a" font-family="Arial, sans-serif" font-size="32" font-weight="700">Execution plan</text>
+  <text x="65" y="100" fill="#475569" font-family="Arial, sans-serif" font-size="17">Dependencies make specialist work explicit and resumable.</text>
+  <g font-family="Arial, sans-serif" filter="url(#shadow)">
+    <rect x="80" y="220" width="220" height="100" rx="16" fill="#2563eb"/>
+    <rect x="80" y="375" width="220" height="100" rx="16" fill="#14b8a6"/>
+    <rect x="80" y="530" width="220" height="70" rx="16" fill="#94a3b8"/>
+    <rect x="455" y="300" width="230" height="110" rx="16" fill="#f59e0b"/>
+    <rect x="835" y="300" width="230" height="110" rx="16" fill="#8b5cf6"/>
+    <rect x="1190" y="300" width="150" height="110" rx="16" fill="#22c55e"/>
+  </g>
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <text x="190" y="262" fill="white" font-size="22" font-weight="700">RESEARCH</text><text x="190" y="290" fill="#dbeafe" font-size="14">Web / MCP sources</text>
+    <text x="190" y="417" fill="white" font-size="22" font-weight="700">RAG</text><text x="190" y="445" fill="#ccfbf1" font-size="14">Private collections</text>
+    <text x="190" y="560" fill="white" font-size="19" font-weight="700">DATA (optional)</text>
+    <text x="570" y="345" fill="white" font-size="22" font-weight="700">CRITIC</text><text x="570" y="375" fill="#fffbeb" font-size="14">Risk + contradictions</text>
+    <text x="950" y="345" fill="white" font-size="22" font-weight="700">REPORT</text><text x="950" y="375" fill="#ede9fe" font-size="14">Cited draft</text>
+    <text x="1265" y="345" fill="white" font-size="22" font-weight="700">REVIEW</text><text x="1265" y="375" fill="#dcfce7" font-size="14">Pass / revise</text>
+  </g>
+  <g fill="none" stroke="#64748b" stroke-width="4" marker-end="url(#arrow)">
+    <path d="M305 270 C360 270 385 330 447 345"/><path d="M305 425 C365 425 390 365 447 365"/><path d="M305 565 C375 565 400 395 447 380"/>
+    <path d="M690 355 H827"/><path d="M1070 355 H1182"/>
+  </g>
+  <text x="65" y="150" fill="#64748b" font-family="Arial, sans-serif" font-size="14">Parallel evidence tasks</text>
+  <text x="1110" y="150" fill="#64748b" font-family="Arial, sans-serif" font-size="14">Final quality gate</text>
+</svg>

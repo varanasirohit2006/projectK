@@ -19,6 +19,7 @@ def test_evaluation_metrics_measure_retrieval_and_support() -> None:
     )
 
     assert recall_at_k(["e1", "e2"], ["e1"]) == 1.0
+    assert recall_at_k(["e1", "other"], ["e1", "e2"]) == 0.5
     assert citation_coverage([claim], [evidence]) == 1.0
     assert faithfulness([claim], [evidence]) == 1.0
     assert answer_correctness("lead times increased", "lead times increased") == 1.0

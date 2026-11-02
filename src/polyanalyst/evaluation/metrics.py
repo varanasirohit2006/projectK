@@ -19,12 +19,14 @@ class EvaluationSummary(PolyModel):
 
 
 def recall_at_k(retrieved_ids: Iterable[str], relevant_ids: Iterable[str], k: int = 3) -> float:
-    """Return whether at least one relevant item appears in the first ``k``."""
+    """Return the fraction of relevant items found in the first ``k``."""
 
+    if k < 1:
+        raise ValueError("k must be at least 1")
     relevant = set(relevant_ids)
     if not relevant:
         return 1.0
-    return 1.0 if relevant.intersection(list(retrieved_ids)[:k]) else 0.0
+    return len(relevant.intersection(list(retrieved_ids)[:k])) / len(relevant)
 
 
 def citation_coverage(claims: Iterable[ReportClaim], evidence: Iterable[EvidenceItem]) -> float:

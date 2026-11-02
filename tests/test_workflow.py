@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from polyanalyst.evidence.repository import SQLiteEvidenceStore
 from polyanalyst.graph.checkpoints import RunRepository
 from polyanalyst.graph.workflow import ResearchWorkflow
@@ -70,8 +72,11 @@ def test_high_risk_run_pauses_and_resumes_after_approval(tmp_path: Path) -> None
             approve_plan=True,
         )
         assert result.status == RunStatus.WAITING_FOR_HUMAN_APPROVAL
+        assert result.state.evidence_ids == []
         resumed = workflow.resume(result.run_id, human_approval=True)
         assert resumed.status == RunStatus.COMPLETED
+        with pytest.raises(ValueError, match="terminal"):
+            workflow.resume(result.run_id, human_approval=True)
     finally:
         evidence.close()
         runs.close()

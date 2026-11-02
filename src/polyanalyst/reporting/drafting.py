@@ -12,7 +12,9 @@ from polyanalyst.models import (
     Finding,
     ReportClaim,
     ResearchQuery,
+    ReviewResult,
 )
+from polyanalyst.reporting.presentation import CitationMap, asset_image, source_reference
 
 
 class DraftReport(BaseModel):
@@ -21,6 +23,7 @@ class DraftReport(BaseModel):
     title: str
     markdown: str
     claims: list[ReportClaim] = Field(default_factory=list)
+    citation_labels: dict[str, str] = Field(default_factory=dict)
     llm_used: bool = False
     llm_error: str | None = None
 
@@ -49,6 +52,8 @@ class ReportGenerator:
         run_id: str,
     ) -> DraftReport:
         claims: list[ReportClaim] = []
+        citation_map = CitationMap.from_evidence(evidence)
+        sources = {item.source_id: store.get_source(item.source_id) for item in evidence}
         for item in evidence:
             claim = ReportClaim(
                 text=item.claim,
@@ -69,25 +74,46 @@ class ReportGenerator:
         lines = [
             f"# {title}",
             "",
-            "> This report was generated from structured evidence and reviewed "
-            "for citation coverage.",
+            "> PolyAnalyst report — evidence-grounded, source-traceable, and reviewable.",
             "",
-            "## Executive summary",
+            "## Executive answer",
             "",
             narrative.executive_summary,
             "",
+            "## Scope and run metadata",
+            "",
+            "| Field | Value |",
+            "| --- | --- |",
+            f"| Run | `{run_id}` |",
+            f"| Risk level | {query.risk_level.value} |",
+            f"| Geography | {query.geography or 'Not specified'} |",
+            f"| Time period | {query.time_period or 'Not specified'} |",
+            "",
+            "## Research pipeline",
+            "",
+            asset_image("evidence-lineage.svg", "Evidence lineage from source to reviewed claim"),
+            "",
+            "## Key findings",
+            "",
         ]
-        if findings:
-            lines.extend(f"- {finding.summary}" for finding in findings)
-        else:
-            lines.append("- No specialist findings were produced.")
-
-        lines.extend(["", "## Evidence-backed findings", ""])
         if claims:
             for number, claim in enumerate(claims, start=1):
-                lines.append(f"{number}. {claim.text} [Evidence: `{claim.evidence_ids[0]}`]")
+                labels = ", ".join(citation_map.label(item) for item in claim.evidence_ids)
+                lines.append(
+                    f"{number}. **[{labels}]** {claim.text} "
+                    f"_(confidence {claim.confidence:.0%})_"
+                )
         else:
             lines.append("No evidence was available for this question.")
+
+        lines.extend(["", "## Agent coverage", ""])
+        if findings:
+            lines.extend(
+                f"- **{finding.agent_name}** — {finding.summary}"
+                for finding in findings
+            )
+        else:
+            lines.append("- No specialist findings were produced.")
 
         lines.extend(["", "## Risk assessment", "", narrative.risk_assessment])
         lines.extend(["", "## Contradictions and uncertainty", ""])
@@ -102,7 +128,23 @@ class ReportGenerator:
             lines.extend(["", "### Model uncertainty notes", ""])
             lines.extend(f"- {note}" for note in narrative.uncertainty_notes)
 
-        lines.extend(["", "## Methodology", "", f"- Question: {query.question}"])
+        lines.extend(["", "## Evidence quality", ""])
+        lines.extend(
+            [
+                "| Citation | Source | Quality | Freshness | Confidence |",
+                "| --- | --- | ---: | ---: | ---: |",
+            ]
+        )
+        for item in evidence:
+            source = sources[item.source_id]
+            lines.append(
+                f"| [{citation_map.label(item.evidence_id)}] | "
+                f"{source_reference(source, item.source_id)} | "
+                f"{item.quality_score:.0%} | {item.freshness_score:.0%} | "
+                f"{item.confidence:.0%} |"
+            )
+
+        lines.extend(["", "## Methodology and limitations", "", f"- Question: {query.question}"])
         if query.geography:
             lines.append(f"- Geography: {query.geography}")
         if query.time_period:
@@ -111,9 +153,13 @@ class ReportGenerator:
         lines.extend(["", "## Evidence appendix", ""])
         if evidence:
             for item in evidence:
+                source = sources[item.source_id]
+                label = citation_map.label(item.evidence_id)
                 lines.append(
-                    f"- `{item.evidence_id}` — {item.excerpt} "
-                    f"(source `{item.source_id}`, confidence {item.confidence:.2f})"
+                    f"- **[{label}] {source_reference(source, item.source_id)}** — "
+                    f"{item.excerpt} _(confidence {item.confidence:.0%}"
+                    f"; location {item.location or 'not specified'}; "
+                    f"internal evidence_id `{item.evidence_id}`)_"
                 )
         else:
             lines.append("- No evidence items were collected.")
@@ -122,9 +168,31 @@ class ReportGenerator:
             title=title,
             markdown="\n".join(lines) + "\n",
             claims=claims,
+            citation_labels=citation_map.labels,
             llm_used=self.llm is not None and llm_error is None,
             llm_error=llm_error,
         )
+
+    def append_review(self, draft: DraftReport, review: ReviewResult) -> DraftReport:
+        """Add the final deterministic review outcome to the report."""
+
+        status = "PASSED" if review.passed else "FAILED"
+        lines = [
+            "",
+            "## Review outcome",
+            "",
+            f"- **Status:** {status}",
+            f"- **Citation coverage:** {review.citation_coverage:.0%}",
+        ]
+        if review.unsupported_claim_ids:
+            lines.append(
+                "- **Unsupported claims:** " + ", ".join(review.unsupported_claim_ids)
+            )
+        if review.revision_instructions:
+            lines.append("- **Review instructions:**")
+            lines.extend(f"  - {item}" for item in review.revision_instructions)
+        markdown = draft.markdown.rstrip() + "\n" + "\n".join(lines) + "\n"
+        return draft.model_copy(update={"markdown": markdown})
 
     def _generate_narrative(
         self,

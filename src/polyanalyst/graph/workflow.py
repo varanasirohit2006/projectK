@@ -110,6 +110,8 @@ class ResearchWorkflow:
         if payload is None:
             raise KeyError(f"No checkpoint found for run: {run_id}")
         state = WorkflowState.model_validate(payload)
+        if state.status in {RunStatus.COMPLETED, RunStatus.FAILED}:
+            raise ValueError(f"Run {run_id} is terminal and cannot be resumed")
         if state.status == RunStatus.WAITING_FOR_PLAN_APPROVAL:
             if not approve_plan or state.plan is None:
                 return WorkflowResult(state=state)
@@ -117,6 +119,16 @@ class ResearchWorkflow:
         elif state.status == RunStatus.WAITING_FOR_HUMAN_APPROVAL:
             if human_approval is None:
                 return WorkflowResult(state=state)
+            if state.approval_request:
+                state.approval_request.decision = "approved" if human_approval else "rejected"
+                state.approval_request.decided_at = datetime.now(UTC)
+                self._emit(
+                    state.run_id,
+                    "approval_decided",
+                    f"Human approval {'granted' if human_approval else 'denied'}",
+                    payload={"approval_id": state.approval_request.approval_id},
+                )
+                self._checkpoint(state)
             if not human_approval:
                 return self._fail(state, "Human approval was denied")
         return self._execute(state, human_approval=human_approval)
@@ -124,6 +136,12 @@ class ResearchWorkflow:
     def _execute(self, state: WorkflowState, human_approval: bool | None) -> WorkflowResult:
         if state.plan is None or not state.plan.approved:
             return WorkflowResult(state=state)
+        if state.status in {RunStatus.COMPLETED, RunStatus.FAILED}:
+            raise ValueError(f"Run {state.run_id} is terminal and cannot be executed")
+        if state.plan.requires_approval and human_approval is None:
+            return self._request_human_approval(state)
+        if state.plan.requires_approval and human_approval is False:
+            return self._fail(state, "Human approval was denied")
         started_at = datetime.now(UTC)
         if state.plan.estimated_cost_usd > state.query.max_cost_usd:
             return self._fail(state, "Estimated plan cost exceeds the configured cost budget")
@@ -140,25 +158,29 @@ class ResearchWorkflow:
         except Exception as exc:
             return self._fail(state, str(exc))
 
-        if state.plan.requires_approval and human_approval is None:
-            state.approval_request = ApprovalRequest(
-                run_id=state.run_id,
-                reason="The plan or its findings meet the configured high-risk threshold.",
-                risk_level=state.query.risk_level,
-            )
-            state.status = RunStatus.WAITING_FOR_HUMAN_APPROVAL
-            self.run_repository.update_status(state.run_id, state.status)
-            self._emit(
-                state.run_id,
-                "approval_requested",
-                state.approval_request.reason,
-                payload={"approval_id": state.approval_request.approval_id},
-            )
-            self._checkpoint(state)
-            return WorkflowResult(state=state)
-        if state.plan.requires_approval and human_approval is False:
-            return self._fail(state, "Human approval was denied")
+        if state.review and not state.review.passed:
+            return self._fail(state, "Final report did not pass citation review")
         return self._complete(state, started_at)
+
+    def _request_human_approval(self, state: WorkflowState) -> WorkflowResult:
+        state.approval_request = ApprovalRequest(
+            run_id=state.run_id,
+            reason=(
+                "This high-risk plan requires human approval before external tools, "
+                "private documents, or model calls are executed."
+            ),
+            risk_level=state.query.risk_level,
+        )
+        state.status = RunStatus.WAITING_FOR_HUMAN_APPROVAL
+        self.run_repository.update_status(state.run_id, state.status)
+        self._emit(
+            state.run_id,
+            "approval_requested",
+            state.approval_request.reason,
+            payload={"approval_id": state.approval_request.approval_id},
+        )
+        self._checkpoint(state)
+        return WorkflowResult(state=state)
 
     def _execute_tasks(self, state: WorkflowState, started_at: datetime) -> None:
         assert state.plan is not None
@@ -256,10 +278,13 @@ class ResearchWorkflow:
                 markdown=state.report_markdown or "",
                 claims=state.report_claims,
             )
-            state.review = self.reviewer.review(draft, evidence, state.contradictions)
-            if not state.review.passed:
-                revised = self.reporter.revise(draft, state.review.revision_instructions)
-                state.report_markdown = revised.markdown
+            review = self.reviewer.review(draft, evidence, state.contradictions)
+            reviewed_draft = draft
+            if not review.passed:
+                reviewed_draft = self.reporter.revise(draft, review.revision_instructions)
+                review = self.reviewer.review(reviewed_draft, evidence, state.contradictions)
+            state.review = review
+            state.report_markdown = self.reporter.append_review(reviewed_draft, review).markdown
             return AgentOutput(
                 agent_name="reviewer",
                 summary=(

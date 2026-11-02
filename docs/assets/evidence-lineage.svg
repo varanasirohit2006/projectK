@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="460" viewBox="0 0 1200 460" role="img" aria-labelledby="title desc">
+  <title id="title">PolyAnalyst evidence lineage</title>
+  <desc id="desc">A source becomes a structured evidence item, then a report claim, then a reviewed citation.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#475569"/></marker>
+    <filter id="shadow"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity=".16"/></filter>
+  </defs>
+  <rect width="1200" height="460" rx="24" fill="#f1f5f9"/>
+  <text x="55" y="60" fill="#0f172a" font-family="Arial, sans-serif" font-size="30" font-weight="700">Claim-to-evidence lineage</text>
+  <g font-family="Arial, sans-serif" filter="url(#shadow)">
+    <rect x="70" y="150" width="220" height="150" rx="18" fill="#2563eb"/>
+    <rect x="350" y="150" width="220" height="150" rx="18" fill="#0f766e"/>
+    <rect x="630" y="150" width="220" height="150" rx="18" fill="#7c3aed"/>
+    <rect x="910" y="150" width="220" height="150" rx="18" fill="#16a34a"/>
+  </g>
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <text x="180" y="195" fill="white" font-size="22" font-weight="700">SOURCE</text><text x="180" y="228" fill="#dbeafe" font-size="14">URL / document</text><text x="180" y="254" fill="#dbeafe" font-size="14">publisher + date</text><text x="180" y="280" fill="#dbeafe" font-size="14">content hash</text>
+    <text x="460" y="195" fill="white" font-size="22" font-weight="700">EVIDENCE</text><text x="460" y="228" fill="#ccfbf1" font-size="14">claim + excerpt</text><text x="460" y="254" fill="#ccfbf1" font-size="14">location + confidence</text><text x="460" y="280" fill="#ccfbf1" font-size="14">agent + task</text>
+    <text x="740" y="195" fill="white" font-size="22" font-weight="700">REPORT CLAIM</text><text x="740" y="228" fill="#ede9fe" font-size="14">readable [E1] label</text><text x="740" y="254" fill="#ede9fe" font-size="14">linked evidence IDs</text><text x="740" y="280" fill="#ede9fe" font-size="14">support status</text>
+    <text x="1020" y="195" fill="white" font-size="22" font-weight="700">REVIEW</text><text x="1020" y="228" fill="#dcfce7" font-size="14">citation coverage</text><text x="1020" y="254" fill="#dcfce7" font-size="14">faithfulness check</text><text x="1020" y="280" fill="#dcfce7" font-size="14">pass / revise</text>
+  </g>
+  <g fill="none" stroke="#475569" stroke-width="4" marker-end="url(#arrow)"><path d="M295 225 H342"/><path d="M575 225 H622"/><path d="M855 225 H902"/></g>
+  <text x="600" y="385" text-anchor="middle" fill="#475569" font-family="Arial, sans-serif" font-size="16">Opaque internal IDs remain in the appendix; readers see stable, human-friendly citation labels.</text>
+</svg>

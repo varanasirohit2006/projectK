@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="680" viewBox="0 0 1100 680" role="img" aria-labelledby="title desc">
+  <title id="title">PolyAnalyst report structure</title>
+  <desc id="desc">A clean report layout from executive answer through evidence appendix.</desc>
+  <rect width="1100" height="680" rx="24" fill="#f8fafc"/>
+  <text x="60" y="62" fill="#0f172a" font-family="Arial, sans-serif" font-size="30" font-weight="700">Report anatomy</text>
+  <g font-family="Arial, sans-serif">
+    <rect x="90" y="105" width="920" height="75" rx="14" fill="#1d4ed8"/><text x="125" y="151" fill="white" font-size="21" font-weight="700">1  Executive answer</text><text x="980" y="151" text-anchor="end" fill="#dbeafe" font-size="14">clear decision-facing summary</text>
+    <rect x="90" y="200" width="920" height="75" rx="14" fill="#7c3aed"/><text x="125" y="246" fill="white" font-size="21" font-weight="700">2  Scope and key findings</text><text x="980" y="246" text-anchor="end" fill="#ede9fe" font-size="14">readable [E1] citations</text>
+    <rect x="90" y="295" width="920" height="75" rx="14" fill="#d97706"/><text x="125" y="341" fill="white" font-size="21" font-weight="700">3  Risks and uncertainty</text><text x="980" y="341" text-anchor="end" fill="#fef3c7" font-size="14">contradictions stay visible</text>
+    <rect x="90" y="390" width="920" height="75" rx="14" fill="#0f766e"/><text x="125" y="436" fill="white" font-size="21" font-weight="700">4  Evidence quality and review</text><text x="980" y="436" text-anchor="end" fill="#ccfbf1" font-size="14">quality, freshness, coverage</text>
+    <rect x="90" y="485" width="920" height="75" rx="14" fill="#334155"/><text x="125" y="531" fill="white" font-size="21" font-weight="700">5  Methodology and appendix</text><text x="980" y="531" text-anchor="end" fill="#cbd5e1" font-size="14">full excerpts + internal IDs</text>
+  </g>
+  <text x="550" y="625" text-anchor="middle" fill="#475569" font-family="Arial, sans-serif" font-size="16">The report separates decisions, evidence, uncertainty, and implementation detail.</text>
+</svg>

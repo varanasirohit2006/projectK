@@ -4,6 +4,11 @@ PolyAnalyst is a typed, evidence-centric multi-agent research platform. It
 turns a complex question into a reviewable plan, runs specialist research
 tasks, stores claims with provenance, and produces a citation-backed report.
 
+![PolyAnalyst architecture](docs/assets/architecture-overview.svg)
+
+For a complete walkthrough of the architecture, agents, data flow, security,
+evaluation, and setup, see [the project explanation](docs/PROJECT_EXPLANATION.md).
+
 ## Current implementation
 
 - Supervisor-generated DAG with plan preview and approval;
@@ -17,6 +22,8 @@ tasks, stores claims with provenance, and produces a citation-backed report.
 - Recall@3, faithfulness, citation coverage, and answer-correctness metrics;
 - offline demo provider so the complete flow runs without API keys;
 - optional LangGraph, ChromaDB, MCP SDK, Streamlit, and ReportLab adapters.
+- generated architecture, workflow, approval, evidence-lineage, and report visuals;
+- a structured research-workbench UI with Overview, Plan, Evidence, Report, and Audit tabs.
 
 Optional integrations are kept behind extras so the core remains easy to run:
 

@@ -19,7 +19,11 @@ class ReviewerAgent:
         unsupported = [
             claim.claim_id
             for claim in draft.claims
-            if not claim.supported or not set(claim.evidence_ids).issubset(evidence_ids)
+            if (
+                not claim.supported
+                or not claim.evidence_ids
+                or not set(claim.evidence_ids).issubset(evidence_ids)
+            )
         ]
         claim_count = len(draft.claims)
         supported_count = claim_count - len(unsupported)

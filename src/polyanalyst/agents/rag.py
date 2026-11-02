@@ -24,10 +24,14 @@ class RAGAgent:
         task_id: str,
         store: SQLiteEvidenceStore,
     ) -> AgentOutput:
-        matches = self.document_store.search(
-            query.question,
-            limit=query.max_sources,
-            collection_ids=query.collection_ids,
+        matches = (
+            self.document_store.search(
+                query.question,
+                limit=query.max_sources,
+                collection_ids=query.collection_ids,
+            )
+            if query.collection_ids
+            else []
         )
         evidence_ids: list[str] = []
         for chunk, score in matches:
