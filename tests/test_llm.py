@@ -39,7 +39,7 @@ def test_settings_detects_gemini_key_without_exposing_it(monkeypatch) -> None:
     settings = Settings.from_env()
 
     assert settings.model_provider == "gemini"
-    assert settings.model_name == "gemini-2.5-flash"
+    assert settings.model_name == "gemma-4-31b-it"
     assert settings.gemini_api_key.get_secret_value() == "test-secret"
     assert "test-secret" not in repr(settings)
 
@@ -51,7 +51,7 @@ def test_gemini_provider_validates_structured_output() -> None:
     result = provider.generate_structured("Write a report.", GeneratedReportNarrative)
 
     assert result.executive_summary == "Gemini summary."
-    assert client.models.calls[0]["model"] == "gemini-2.5-flash"
+    assert client.models.calls[0]["model"] == "gemma-4-31b-it"
     assert client.models.calls[0]["config"]["response_mime_type"] == "application/json"
 
 

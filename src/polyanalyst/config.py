@@ -47,7 +47,11 @@ class Settings(BaseModel):
             if "POLYANALYST_MODEL_PROVIDER" not in os.environ:
                 values["model_provider"] = "gemini"
             if "POLYANALYST_MODEL_NAME" not in os.environ:
-                values["model_name"] = "gemini-2.5-flash"
+                values["model_name"] = "gemma-4-31b-it"
+        if values.get("model_provider") in {"gemini", "google", "google-gemini"} and (
+            "POLYANALYST_MODEL_NAME" not in os.environ
+        ):
+            values["model_name"] = "gemma-4-31b-it"
         settings = cls.model_validate(values)
         settings.data_dir.mkdir(parents=True, exist_ok=True)
         settings.db_path.parent.mkdir(parents=True, exist_ok=True)

@@ -76,7 +76,7 @@ PowerShell:
 ```powershell
 $env:GEMINI_API_KEY = "your-key"
 $env:POLYANALYST_MODEL_PROVIDER = "gemini"
-$env:POLYANALYST_MODEL_NAME = "gemini-2.5-flash"
+$env:POLYANALYST_MODEL_NAME = "gemma-4-31b-it"
 ```
 
 Alternatively, put the same variables in a local `.env` file. `.env` is

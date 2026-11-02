@@ -24,7 +24,7 @@ class GeminiProvider:
     def __init__(
         self,
         api_key: str | None = None,
-        model_name: str = "gemini-2.5-flash",
+        model_name: str = "gemma-4-31b-it",
         client: Any | None = None,
     ) -> None:
         self.model_name = model_name
