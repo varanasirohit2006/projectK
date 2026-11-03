@@ -18,7 +18,7 @@ workflow = ["langgraph>=0.2"]
 ui = ["streamlit>=1.38"]
 vector = ["chromadb>=0.5"]
 mcp = ["mcp>=1.0"]
-pdf = ["reportlab>=4.0"]
+pdf = ["reportlab>=4.0", "svglib>=1.5"]
 gemini = ["google-genai>=1.0"]
 dev = [
     "pytest>=8.0",

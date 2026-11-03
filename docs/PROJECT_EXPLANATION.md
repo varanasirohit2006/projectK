@@ -161,6 +161,23 @@ The report is organized as:
 10. Methodology and limitations;
 11. Evidence appendix.
 
+## Evidence-derived report images
+
+Each completed run creates a visual package under `data/runs/<run_id>/images/`:
+
+- **Run evidence summary** — evidence count, average quality, and average
+  confidence;
+- **Evidence quality profile** — quality and confidence bars for each `[E#]`;
+- **Source mix** — distribution of web, document, dataset, and database
+  evidence.
+
+These are generated SVG charts from the run's structured evidence. They are not
+copied from the web and therefore cite their underlying evidence records in
+the report. The report keeps the source URL, title, publisher, and excerpt in
+the Evidence Appendix. If an external image is registered through
+`ReportVisualGenerator.register_external_image`, a source URL and attribution
+are mandatory and appear below the figure.
+
 The Streamlit workbench exposes the same information through separate Overview,
 Plan, Evidence, Report, and Audit areas. Run history, task events, evidence
 quality, approval state, and feedback are persisted in SQLite.

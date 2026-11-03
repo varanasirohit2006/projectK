@@ -54,6 +54,8 @@ def test_workflow_runs_research_rag_data_and_review(tmp_path: Path) -> None:
         assert result.state.review is not None
         assert result.state.review.passed is True
         assert len(result.state.evidence_ids) >= 3
+        assert len(result.state.report_images) == 4
+        assert "Visual evidence and image citations" in (result.state.report_markdown or "")
         assert "Evidence appendix" in (result.state.report_markdown or "")
         assert len(runs.list_events(result.run_id)) >= 10
     finally:

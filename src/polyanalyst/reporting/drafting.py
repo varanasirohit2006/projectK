@@ -11,10 +11,12 @@ from polyanalyst.models import (
     EvidenceItem,
     Finding,
     ReportClaim,
+    ReportImage,
     ResearchQuery,
     ReviewResult,
 )
-from polyanalyst.reporting.presentation import CitationMap, asset_image, source_reference
+from polyanalyst.reporting.presentation import CitationMap, source_reference
+from polyanalyst.reporting.visuals import image_citation
 
 
 class DraftReport(BaseModel):
@@ -24,6 +26,7 @@ class DraftReport(BaseModel):
     markdown: str
     claims: list[ReportClaim] = Field(default_factory=list)
     citation_labels: dict[str, str] = Field(default_factory=dict)
+    images: list[ReportImage] = Field(default_factory=list)
     llm_used: bool = False
     llm_error: str | None = None
 
@@ -50,6 +53,7 @@ class ReportGenerator:
         contradictions: list[Contradiction],
         store: SQLiteEvidenceStore,
         run_id: str,
+        images: list[ReportImage] | None = None,
     ) -> DraftReport:
         claims: list[ReportClaim] = []
         citation_map = CitationMap.from_evidence(evidence)
@@ -65,6 +69,7 @@ class ReportGenerator:
             claims.append(claim)
 
         title = f"Research report: {query.question}"
+        report_images = images or []
         narrative, llm_error = self._generate_narrative(
             query=query,
             evidence=evidence,
@@ -91,7 +96,7 @@ class ReportGenerator:
             "",
             "## Research pipeline",
             "",
-            asset_image("evidence-lineage.svg", "Evidence lineage from source to reviewed claim"),
+            "Run-specific evidence visuals are generated from the structured source records below.",
             "",
             "## Key findings",
             "",
@@ -105,6 +110,20 @@ class ReportGenerator:
                 )
         else:
             lines.append("No evidence was available for this question.")
+
+        lines.extend(["", "## Visual evidence and image citations", ""])
+        if report_images:
+            for index, image in enumerate(report_images, start=1):
+                lines.extend(
+                    [
+                        f"### Figure {index}: {image.title}",
+                        f"![{image.alt_text}]({image.report_path})",
+                        f"*{image_citation(image, citation_map.labels)}*",
+                        "",
+                    ]
+                )
+        else:
+            lines.append("No visual evidence was generated for this run.")
 
         lines.extend(["", "## Agent coverage", ""])
         if findings:
@@ -169,6 +188,7 @@ class ReportGenerator:
             markdown="\n".join(lines) + "\n",
             claims=claims,
             citation_labels=citation_map.labels,
+            images=report_images,
             llm_used=self.llm is not None and llm_error is None,
             llm_error=llm_error,
         )

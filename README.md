@@ -24,12 +24,17 @@ evaluation, and setup, see [the project explanation](docs/PROJECT_EXPLANATION.md
 - optional LangGraph, ChromaDB, MCP SDK, Streamlit, and ReportLab adapters.
 - generated architecture, workflow, approval, evidence-lineage, and report visuals;
 - a structured research-workbench UI with Overview, Plan, Evidence, Report, and Audit tabs.
+- per-run SVG charts generated from evidence, with `[E#]` image citations and
+  source attribution for any registered external image.
 
 Optional integrations are kept behind extras so the core remains easy to run:
 
 ```text
 pip install -e ".[dev,workflow,ui,mcp,vector,pdf,gemini]"
 ```
+
+The PDF extra includes SVG support so generated report figures and their image
+citations are included in PDF exports.
 
 ## Development
 
@@ -54,6 +59,9 @@ Approve and execute the offline workflow:
 ```text
 python -m polyanalyst run "Analyze supply chain resilience" --approve-plan --export data/report.md
 ```
+
+Add `--export-pdf data/report.pdf` for a PDF containing the generated figures
+and their image citations.
 
 For the interactive interface, install the UI extra and run:
 

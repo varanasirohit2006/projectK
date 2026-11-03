@@ -15,6 +15,7 @@ from polyanalyst.llm.factory import build_llm_provider
 from polyanalyst.models import ResearchQuery, RiskLevel, RunStatus, UserFeedback
 from polyanalyst.reporting.drafting import DraftReport
 from polyanalyst.reporting.export import export_pdf
+from polyanalyst.reporting.visuals import image_citation
 from polyanalyst.security.guardrails import DataPathPolicy
 
 
@@ -187,6 +188,22 @@ def _display_audit(workflow: ResearchWorkflow, state: WorkflowState) -> None:
         )
 
 
+def _display_report_images(workflow: ResearchWorkflow, state: WorkflowState) -> None:
+    import streamlit as st
+
+    if not state.report_images:
+        st.info("No generated visuals are attached to this run.")
+        return
+    evidence = workflow.evidence_store.list_unique_evidence(state.run_id)
+    labels = {item.evidence_id: f"E{index}" for index, item in enumerate(evidence, start=1)}
+    st.subheader("Generated visuals")
+    for image in state.report_images:
+        image_path = Path(image.path)
+        if image_path.is_file():
+            st.image(str(image_path), caption=image.title, use_container_width=True)
+        st.caption(image_citation(image, labels))
+
+
 def main() -> None:
     import streamlit as st
 
@@ -231,6 +248,7 @@ def main() -> None:
                 max_cost_usd=max_cost,
                 max_duration_seconds=max_duration,
             )
+
             st.session_state.result = workflow.run(query)
             st.rerun()
         st.divider()
@@ -279,6 +297,7 @@ def main() -> None:
         _display_evidence(workflow, state)
     with report:
         if state.report_markdown:
+            _display_report_images(workflow, state)
             st.download_button(
                 "Download Markdown",
                 state.report_markdown,
@@ -293,6 +312,7 @@ def main() -> None:
                         title=state.report_title or "PolyAnalyst report",
                         markdown=state.report_markdown,
                         claims=state.report_claims,
+                        images=state.report_images,
                     ),
                     pdf_path,
                 )

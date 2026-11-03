@@ -57,6 +57,11 @@ class SourceType(StrEnum):
     DATABASE = "database"
 
 
+class ImageSourceKind(StrEnum):
+    GENERATED = "generated"
+    EXTERNAL = "external"
+
+
 class PolyModel(BaseModel):
     """Base model with strict serialization settings."""
 
@@ -176,6 +181,24 @@ class ReviewResult(PolyModel):
     contradiction_ids: list[str] = Field(default_factory=list)
     revision_instructions: list[str] = Field(default_factory=list)
     checked_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class ReportImage(PolyModel):
+    """A report image together with its provenance and attribution."""
+
+    image_id: str = Field(default_factory=lambda: new_id("image"))
+    run_id: str
+    title: str
+    alt_text: str
+    path: str
+    report_path: str
+    source_kind: ImageSourceKind = ImageSourceKind.GENERATED
+    evidence_ids: list[str] = Field(default_factory=list)
+    source_url: str | None = None
+    source_title: str | None = None
+    attribution: str | None = None
+    generated_by: str | None = "PolyAnalyst"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class ApprovalRequest(PolyModel):

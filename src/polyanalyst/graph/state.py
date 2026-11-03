@@ -10,6 +10,7 @@ from polyanalyst.models import (
     Finding,
     PolyModel,
     ReportClaim,
+    ReportImage,
     ResearchPlan,
     ResearchQuery,
     ReviewResult,
@@ -30,6 +31,7 @@ class WorkflowState(PolyModel):
     report_title: str | None = None
     report_markdown: str | None = None
     report_claims: list[ReportClaim] = Field(default_factory=list)
+    report_images: list[ReportImage] = Field(default_factory=list)
     review: ReviewResult | None = None
     approval_request: ApprovalRequest | None = None
 

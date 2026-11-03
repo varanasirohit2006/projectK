@@ -28,6 +28,7 @@ from polyanalyst.models import (
 )
 from polyanalyst.reporting.drafting import DraftReport, ReportGenerator
 from polyanalyst.reporting.reviewer import ReviewerAgent
+from polyanalyst.reporting.visuals import ReportVisualGenerator
 from polyanalyst.tools.budgets import BudgetExceeded
 
 
@@ -48,6 +49,7 @@ class ResearchWorkflow:
         reporter: ReportGenerator | None = None,
         reviewer: ReviewerAgent | None = None,
         llm: LLMProvider | None = None,
+        visual_generator: ReportVisualGenerator | None = None,
         max_workers: int = 3,
     ) -> None:
         self.evidence_store = evidence_store
@@ -60,6 +62,9 @@ class ResearchWorkflow:
         self.critic = critic or RiskCriticAgent()
         self.reporter = reporter or ReportGenerator(llm=llm)
         self.reviewer = reviewer or ReviewerAgent()
+        self.visual_generator = visual_generator or ReportVisualGenerator(
+            evidence_store.path.parent / "runs"
+        )
         self.max_workers = max(1, max_workers)
 
     def run(
@@ -255,6 +260,16 @@ class ResearchWorkflow:
             return output
         if task.kind == TaskKind.REPORT:
             evidence = self.evidence_store.list_unique_evidence(state.run_id)
+            sources = {
+                item.source_id: self.evidence_store.get_source(item.source_id)
+                for item in evidence
+            }
+            state.report_images = self.visual_generator.generate(
+                state.run_id,
+                state.query,
+                evidence,
+                sources,
+            )
             draft = self.reporter.draft(
                 state.query,
                 evidence,
@@ -262,6 +277,7 @@ class ResearchWorkflow:
                 state.contradictions,
                 self.evidence_store,
                 state.run_id,
+                images=state.report_images,
             )
             state.report_title = draft.title
             state.report_markdown = draft.markdown
@@ -277,6 +293,7 @@ class ResearchWorkflow:
                 title=state.report_title or "Research report",
                 markdown=state.report_markdown or "",
                 claims=state.report_claims,
+                images=state.report_images,
             )
             review = self.reviewer.review(draft, evidence, state.contradictions)
             reviewed_draft = draft

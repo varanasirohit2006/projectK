@@ -13,6 +13,8 @@ from polyanalyst.graph.workflow import ResearchWorkflow
 from polyanalyst.ingestion.documents import InMemoryDocumentStore
 from polyanalyst.llm.factory import build_llm_provider
 from polyanalyst.models import ResearchQuery, RiskLevel
+from polyanalyst.reporting.drafting import DraftReport
+from polyanalyst.reporting.export import export_markdown, export_pdf
 
 
 def build_demo_workflow(
@@ -60,6 +62,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="medium",
     )
     run_parser.add_argument("--export", type=Path)
+    run_parser.add_argument("--export-pdf", type=Path)
 
     plan_parser = subparsers.add_parser("plan", help="create and print a plan")
     plan_parser.add_argument("question")
@@ -91,11 +94,19 @@ def main(argv: list[str] | None = None) -> int:
         if result.state.plan and result.status.value == "waiting_for_plan_approval":
             print("Plan approval is required. Re-run with --approve-plan.")
         if result.state.report_markdown:
+            report = DraftReport(
+                title=result.state.report_title or "PolyAnalyst report",
+                markdown=result.state.report_markdown,
+                claims=result.state.report_claims,
+                images=result.state.report_images,
+            )
             if args.export:
-                args.export.parent.mkdir(parents=True, exist_ok=True)
-                args.export.write_text(result.state.report_markdown, encoding="utf-8")
+                export_markdown(report, args.export)
                 print(f"Report written to {args.export}")
-            else:
+            if args.export_pdf:
+                export_pdf(report, args.export_pdf)
+                print(f"PDF report written to {args.export_pdf}")
+            if not args.export and not args.export_pdf:
                 print(result.state.report_markdown)
         return 0
     finally:
